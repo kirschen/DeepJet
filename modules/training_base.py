@@ -4,6 +4,15 @@
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
+
+import imp
+try:
+    imp.find_module('setGPU')
+    print('running on GPU')
+    import setGPU
+except ImportError:
+    found = False
+    
 # some private extra plots
 #from  NBatchLogger import NBatchLogger
 
@@ -110,17 +119,20 @@ class training_base(object):
             
         
     def loadModel(self,filename):
-        import h5py
-        f = h5py.File(filename, 'r+')
-        del f['optimizer_weights']
+        #import h5py
+        #f = h5py.File(filename, 'r+')
+        #del f['optimizer_weights']
         from keras.models import load_model
         self.keras_model=load_model(filename, custom_objects=global_loss_list)
+        self.compiled=True
         
     def compileModel(self,
                      learningrate,
                      **compileargs):
         if not self.keras_model:
             raise Exception('set model first') #can't happen
+        #if self.compiled:
+        #    return
         from keras.optimizers import Adam
         self.startlearningrate=learningrate
         adam = Adam(lr=self.startlearningrate)
@@ -129,10 +141,10 @@ class training_base(object):
         
     def saveModel(self,outfile):
         self.keras_model.save(self.outputDir+outfile)
-        import h5py
-        f = h5py.File(self.outputDir+outfile, 'r+')
-        del f['optimizer_weights']
-        f.close()
+        #import h5py
+        #f = h5py.File(self.outputDir+outfile, 'r+')
+        #del f['optimizer_weights']
+        #f.close()
         
     def trainModel(self,
                    nepochs,
@@ -146,6 +158,12 @@ class training_base(object):
                    maxqsize=20, 
                    **trainargs):
         
+        #make sure tokens don't expire
+        from tokenTools import checkTokens, renew_token_process
+        from thread import start_new_thread
+        
+        checkTokens()
+        start_new_thread(renew_token_process,())
         
         self.train_data.setBatchSize(batchsize)
         self.val_data.setBatchSize(batchsize)
@@ -175,5 +193,12 @@ class training_base(object):
         self.saveModel("KERAS_model.h5")
         
         return self.keras_model, callbacks.history
+    
+    
+        
+
+        
+        
+        
             
     

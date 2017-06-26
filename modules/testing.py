@@ -20,6 +20,15 @@ Created on 21 Mar 2017
 #
 
 from __future__ import print_function
+
+import imp
+try:
+    imp.find_module('setGPU')
+    print('running on GPU')
+    import setGPU
+except ImportError:
+    found = False
+    
 from pdb import set_trace
 
 class testDescriptor(object):
@@ -53,23 +62,25 @@ class testDescriptor(object):
             
             td.readIn(fullpath)
             truthclasses=td.getUsedTruth()
+            regressionclasses=[]
+            if hasattr(td, 'regressiontargetclasses'):
+                regressionclasses=td.regressiontargetclasses
+            
             formatstring=','.join(['prob_%s%s' % (i, ident) for i in truthclasses])
             features=td.x
             labels=td.y
             #metric=model.evaluate(features, labels, batch_size=10000)
             prediction = model.predict(features)
             if isinstance(prediction, list):
-                formatstring += ",reg_uncPt,reg_Pt" if prediction[1].shape[1] == 2 else ',reg_Pt'
-                if prediction[1].shape[1] > 2:
-                    raise ValueError('Regression (2nd prediction output) can only have up to two values!')
+                formatstring+=','
+                formatstring += ','.join(['reg_%s%s' % (i, ident) for i in regressionclasses])
                 all_write = np.concatenate(prediction, axis=1)
+                
             elif prediction.shape[1] == len(truthclasses):
                 all_write = prediction
             else:
-                formatstring = "reg_uncPt,reg_Pt" if prediction.shape[1] == 2 else 'reg_Pt'
-                if prediction.shape[1] > 2:
-                    raise ValueError('Regression (2nd prediction output) can only have up to two values!')
-                all_write = prediction
+                raise ValueError('Regression (2nd prediction output) can only have up to two values!')
+                
 
             all_write = np.core.records.fromarrays(np.transpose(all_write), names= formatstring)
             array2root(all_write,outputDir+'/'+outrootfilename,"tree",mode="recreate")
@@ -77,7 +88,7 @@ class testDescriptor(object):
             #self.metrics.append(metric)
             self.__sourceroots.append(originroot)
             self.__predictroots.append(outputDir+'/'+outrootfilename)
-            
+            print(formatstring)
             print('\ncreated predition friend tree '+outputDir+'/'+outrootfilename+ ' for '+originroot)
 
     def writeToTextFile(self, outfile):
