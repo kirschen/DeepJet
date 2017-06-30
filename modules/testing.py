@@ -146,7 +146,7 @@ def makeROCs_async(intextfile, name_list, probabilities_list, truths_list, vetos
     # use multiprocessing return thread for waiting option
     
 def makePlots_async(intextfile, name_list, variables, cuts, colours,
-                     outpdffile, xaxis='',yaxis='',normalized=False,profiles=False,minimum=-1e100,maximum=1e100): 
+                     outpdffile, xaxis='',yaxis='',normalized=False,profiles="None",minimum=-1e100,maximum=1e100): 
     
     
     files_list=makeASequence(intextfile,len(name_list))
@@ -157,14 +157,14 @@ def makePlots_async(intextfile, name_list, variables, cuts, colours,
 
     import c_makePlots
     def worker():
-        if profiles:
-            c_makePlots.makeProfiles(files_list,name_list,
+#        if profiles:
+#            c_makePlots.makeProfiles(files_list,name_list,
+#                              variables_list,cuts_list,colours_list,
+#                                 outpdffile,xaxis,yaxis,profiles,normalized,minimum, maximum)
+#        else:
+        c_makePlots.makePlots(files_list,name_list,
                               variables_list,cuts_list,colours_list,
-                                 outpdffile,xaxis,yaxis,normalized,minimum, maximum)
-        else:
-            c_makePlots.makePlots(files_list,name_list,
-                                 variables_list,cuts_list,colours_list,
-                                 outpdffile,xaxis,yaxis,normalized,profiles,minimum,maximum)
+                              outpdffile,xaxis,yaxis,normalized,profiles,minimum,maximum)
     
 #    return worker()
     import multiprocessing
